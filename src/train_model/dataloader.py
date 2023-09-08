@@ -54,15 +54,21 @@ class SimpleTrainingDataset(Dataset):
 class DTNNDataSet(Dataset):
     def __init__(self, file_path):
         # Load the CSV into a Pandas DataFrame
-        self.data = pd.read_csv(file_path)
+        self.data = pd.read_csv(file_path, header=None)
         
         # Extract labels and convert to PyTorch tensor
-        self.labels = torch.tensor(self.data.iloc[:, 0].values, dtype=torch.long)
+        self.labels = torch.tensor(self.data.iloc[:, 0].values, dtype=torch.int)
         
-        # Extract features and standardize
-        self.features = self.data.iloc[:, 1:]
-        scaler = StandardScaler()
-        self.features = scaler.fit_transform(self.features)
+        # # Extract features and standardize
+        # self.features = self.data.iloc[:, 1:]
+        # scaler = StandardScaler()
+        # self.features = scaler.fit_transform(self.features)
+        
+        # # Convert features to PyTorch tensor
+        # self.features = torch.tensor(self.features, dtype=torch.float32)
+
+        # Extract features
+        self.features = self.data.iloc[:, 1:].values
         
         # Convert features to PyTorch tensor
         self.features = torch.tensor(self.features, dtype=torch.float32)
@@ -81,4 +87,16 @@ def load_simple_classifer_data(dataset_path, num_workers=16, batch_size=16, shuf
 
 def load_dtnn_data(dataset_path, num_workers=16, batch_size=32, shuffle=True, **kwargs):
     dataset = DTNNDataSet(dataset_path, **kwargs)
-    return DataLoader(dataset, num_workers=num_workers, batch_size=batch_size, shuffle=shuffle)
+    
+    # Get the number of unique classes in labels
+    num_classes = len(torch.unique(dataset.labels))
+    
+    # Get the feature size (input size)
+    feature_size = dataset.features.shape[1]
+    
+    dataloader = DataLoader(dataset, num_workers=num_workers, batch_size=batch_size, shuffle=shuffle)
+    
+    return dataloader, num_classes, feature_size
+
+if __name__ == "__main__":
+    print(len([0,0,0,12,13,5,0,0,0,0,0,11,16,9,0,0,0,0,3,15,16,6,0,0,0,7,15,16,16,2,0,0,0,0,1,16,16,3,0,0,0,0,1,16,16,6,0,0,0,0,1,16,16,6,0,0,0,0,0,11,16,10,0,0]))

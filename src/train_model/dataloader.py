@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
+from sklearn.preprocessing import StandardScaler
 class SimpleTrainingDataset(Dataset):
     def __init__(self, sensor_data_file_path: str):
         """
@@ -49,9 +50,35 @@ class SimpleTrainingDataset(Dataset):
         labels_np = np.array(labels_list, dtype=np.int64)
 
         return features_np, labels_np
+    
+class DTNNDataSet(Dataset):
+    def __init__(self, file_path):
+        # Load the CSV into a Pandas DataFrame
+        self.data = pd.read_csv(file_path)
+        
+        # Extract labels and convert to PyTorch tensor
+        self.labels = torch.tensor(self.data.iloc[:, 0].values, dtype=torch.long)
+        
+        # Extract features and standardize
+        self.features = self.data.iloc[:, 1:]
+        scaler = StandardScaler()
+        self.features = scaler.fit_transform(self.features)
+        
+        # Convert features to PyTorch tensor
+        self.features = torch.tensor(self.features, dtype=torch.float32)
+    
+    def __len__(self):
+        return len(self.labels)
+    
+    def __getitem__(self, index):
+        return self.features[index], self.labels[index]
 
 
 
 def load_simple_classifer_data(dataset_path, num_workers=16, batch_size=16, shuffle=True, **kwargs):
     dataset = SimpleTrainingDataset(dataset_path, **kwargs)
+    return DataLoader(dataset, num_workers=num_workers, batch_size=batch_size, shuffle=shuffle)
+
+def load_dtnn_data(dataset_path, num_workers=16, batch_size=32, shuffle=True, **kwargs):
+    dataset = DTNNDataSet(dataset_path, **kwargs)
     return DataLoader(dataset, num_workers=num_workers, batch_size=batch_size, shuffle=shuffle)
